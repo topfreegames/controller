@@ -304,8 +304,8 @@ DEIS_DEPLOY_REJECT_IF_PROCFILE_MISSING = bool(strtobool(os.environ.get('DEIS_DEP
 #
 # If the user has a Sidecarfile in both deploys then sidecars are added / removed as per usual
 #
-# By default the sidecaress types are scaled down unless this setting is turned on
-DEIS_DEPLOY_SIDECARFILE_MISSING_REMOVE = bool(strtobool(os.environ.get('DEIS_DEPLOY_SIDECARFILE_MISSING_REMOVE', 'true')))  # noqa
+# By default the sidecar pods are not removed unless this setting is turned on
+DEIS_DEPLOY_SIDECARFILE_MISSING_REMOVE = bool(strtobool(os.environ.get('DEIS_DEPLOY_SIDECARFILE_MISSING_REMOVE', 'false')))  # noqa
 
 # True, true, yes, y and more evaluate to True
 # False, false, no, n and more evaluate to False

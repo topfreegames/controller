@@ -120,6 +120,11 @@ class Pod(Resource):
             'spec': {}
         }
 
+        # pod annotations
+        annotations = self._get_json_from_app('pod_annotations', **kwargs)
+        if annotations:
+            manifest['metadata']['annotations'] = annotations
+
         # pod manifest spec
         spec = manifest['spec']
 
@@ -175,18 +180,17 @@ class Pod(Resource):
             spec['containers'].extend(sidecars)
 
         # tolerations
-        tolerations = self._get_tolerations(**kwargs)
+        tolerations = self._get_json_from_app('tolerations', **kwargs)
         if tolerations:
             spec['tolerations'] = tolerations
 
         return manifest
 
-    def _get_tolerations(self, **kwargs):
-        """Get app tolerations"""
+    def _get_json_from_app(self, json_name, **kwargs):
         try:
             app_type = kwargs.get('app_type')
-            tolerations = kwargs.get('tolerations', {})
-            return tolerations.get(app_type)
+            json = kwargs.get(json_name, {})
+            return json.get(app_type)
         except:
             return None
 

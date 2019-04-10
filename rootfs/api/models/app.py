@@ -1106,10 +1106,20 @@ class App(UuidAuditedModel):
         if tolerations:
             try:
                 tolerations = json.loads(tolerations)
-            except:
+            except json.decoder.JSONDecodeError:
                 err = '(tolerations.json error): {}'.format(tolerations)
                 self.log(err, logging.ERROR)
                 tolerations = {}
+
+        # set pod annotations
+        annotations = config.values.get('KUBERNETES_PODS_ANNOTATIONS', settings.KUBERNETES_PODS_ANNOTATIONS) # noqa
+        if annotations:
+            try:
+                annotations = json.loads(annotations)
+            except json.decoder.JSONDecodeError:
+                err = '(annotations.json error): {}'.format(annotations)
+                self.log(err, logging.ERROR)
+                annotations = {}
 
         # only web / cmd are routable
         # http://docs.deis.io/en/latest/using_deis/process-types/#web-vs-cmd-process-types
@@ -1136,6 +1146,7 @@ class App(UuidAuditedModel):
             'deployment_revision_history_limit': deployment_history,
             'release_summary': release.summary,
             'pod_termination_grace_period_seconds': pod_termination_grace_period_seconds,
+            'pod_annotations': annotations,
             'image_pull_secret_name': image_pull_secret_name,
             'image_pull_policy': image_pull_policy,
             'tolerations': tolerations

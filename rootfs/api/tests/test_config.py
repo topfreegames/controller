@@ -164,8 +164,8 @@ class ConfigTest(DeisTransactionTestCase):
         body = {'values': json.dumps({'PORT': '5000'})}
         response = self.client.post(url, body)
         for key in response.data:
-            self.assertIn(key, ['uuid', 'owner', 'created', 'updated', 'app', 'values', 'memory',
-                                'cpu', 'tags', 'registry', 'healthcheck'])
+            self.assertIn(key, ['annotations', 'uuid', 'owner', 'created', 'updated', 'app',
+                                'values', 'memory', 'cpu', 'tags', 'registry', 'healthcheck'])
         expected = {
             'owner': self.user.username,
             'app': app_id,

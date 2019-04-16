@@ -11,7 +11,7 @@ from django.test.utils import override_settings
 from unittest import mock
 from rest_framework.authtoken.models import Token
 
-from api.models import App, Release
+from api.models import App, Release, Config
 from scheduler import KubeHTTPException
 from api.exceptions import DeisException
 from api.tests import adapter, mock_port, DeisTransactionTestCase
@@ -35,6 +35,27 @@ class ReleaseTest(DeisTransactionTestCase):
     def tearDown(self):
         # make sure every test has a clean slate for k8s mocking
         cache.clear()
+
+    def test_update_summary(self, mock_requests):
+        old_config = {
+            'key': {
+                'something': 'value',
+                'something_else': 'val'
+            },
+            'to_delete': 'value',
+        }
+        new_config = {
+            'key': {
+                'something_else': 'val',
+            },
+            'a_nice_key': 'new_value',
+        }
+        expected = """existing_text and autotest added a config a_nice_key, \
+changed a config key, deleted a config to_delete"""
+        config = Config(owner=self.user)
+        release = Release(summary="existing_text", config=config)
+        release.update_summary(old_config, new_config, 'a config')
+        self.assertEqual(expected, release.summary)
 
     def test_release(self, mock_requests):
         """

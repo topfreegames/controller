@@ -375,7 +375,7 @@ class Release(UuidAuditedModel):
             self._scheduler.rc.scale(namespace, controller['metadata']['name'], 0, timeout)
             self._scheduler.rc.delete(namespace, controller['metadata']['name'])
 
-    def save(self, *args, **kwargs):  # noqa
+    def save(self, *args, **kwargs):
         if not self.summary:
             self.summary = ''
             prev_release = self.previous()
@@ -394,21 +394,8 @@ class Release(UuidAuditedModel):
             # if the config data changed, log the dict diff
             if self.config != old_config:
                 # if env vars change, log the dict diff
-                dict1 = self.config.values
-                dict2 = old_config.values if old_config else {}
-                diff = dict_diff(dict1, dict2)
-                # try to be as succinct as possible
-                added = ', '.join(k for k in diff.get('added', {}))
-                added = 'added ' + added if added else ''
-                changed = ', '.join(k for k in diff.get('changed', {}))
-                changed = 'changed ' + changed if changed else ''
-                deleted = ', '.join(k for k in diff.get('deleted', {}))
-                deleted = 'deleted ' + deleted if deleted else ''
-                changes = ', '.join(i for i in (added, changed, deleted) if i)
-                if changes:
-                    if self.summary:
-                        self.summary += ' and '
-                    self.summary += "{} {}".format(self.config.owner, changes)
+                old_values = old_config.values if old_config else {}
+                self.update_summary(old_values, self.config.values, '')
 
                 # if the limits changed (memory or cpu), log the dict diff
                 changes = []
@@ -425,72 +412,21 @@ class Release(UuidAuditedModel):
                     self.summary += "{} {}".format(self.config.owner, changes)
 
                 # if the tags changed, log the dict diff
-                changes = []
                 old_tags = old_config.tags if old_config else {}
-                diff = dict_diff(self.config.tags, old_tags)
-                # try to be as succinct as possible
-                added = ', '.join(k for k in diff.get('added', {}))
-                added = 'added tag ' + added if added else ''
-                changed = ', '.join(k for k in diff.get('changed', {}))
-                changed = 'changed tag ' + changed if changed else ''
-                deleted = ', '.join(k for k in diff.get('deleted', {}))
-                deleted = 'deleted tag ' + deleted if deleted else ''
-                changes = ', '.join(i for i in (added, changed, deleted) if i)
-                if changes:
-                    if self.summary:
-                        self.summary += ' and '
-                    self.summary += "{} {}".format(self.config.owner, changes)
+                self.update_summary(old_tags, self.config.tags, 'tag')
 
                 # if the registry information changed, log the dict diff
-                changes = []
                 old_registry = old_config.registry if old_config else {}
-                diff = dict_diff(self.config.registry, old_registry)
-                # try to be as succinct as possible
-                added = ', '.join(k for k in diff.get('added', {}))
-                added = 'added registry info ' + added if added else ''
-                changed = ', '.join(k for k in diff.get('changed', {}))
-                changed = 'changed registry info ' + changed if changed else ''
-                deleted = ', '.join(k for k in diff.get('deleted', {}))
-                deleted = 'deleted registry info ' + deleted if deleted else ''
-                changes = ', '.join(i for i in (added, changed, deleted) if i)
-                if changes:
-                    if self.summary:
-                        self.summary += ' and '
-                    self.summary += "{} {}".format(self.config.owner, changes)
+                self.update_summary(old_registry, self.config.registry, 'registry info')
 
                 # if the healthcheck information changed, log the dict diff
-                changes = []
                 old_healthcheck = old_config.healthcheck if old_config else {}
-                diff = dict_diff(self.config.healthcheck, old_healthcheck)
-                # try to be as succinct as possible
-                added = ', '.join(list(map(lambda x: 'default' if x == '' else x, [k for k in diff.get('added', {})])))  # noqa
-                added = 'added healthcheck info for proc type ' + added if added else ''
-                changed = ', '.join(list(map(lambda x: 'default' if x == '' else x, [k for k in diff.get('changed', {})])))  # noqa
-                changed = 'changed healthcheck info for proc type ' + changed if changed else ''
-                deleted = ', '.join(list(map(lambda x: 'default' if x == '' else x, [k for k in diff.get('deleted', {})])))  # noqa
-                deleted = 'deleted healthcheck info for proc type ' + deleted if deleted else ''
-                changes = ', '.join(i for i in (added, changed, deleted) if i)
-                if changes:
-                    if self.summary:
-                        self.summary += ' and '
-                    self.summary += "{} {}".format(self.config.owner, changes)
+                self.update_summary(old_healthcheck, self.config.healthcheck,
+                                    'healthcheck info for proc type', 'default')
 
                 # if the annotations changed, log the diff
-                changes = []
                 old_annotations = old_config.annotations if old_config else {}
-                diff = dict_diff(self.config.annotations, old_annotations)
-                # try to be as succinct as possible
-                added = ', '.join(k for k in diff.get('added', {}))
-                added = 'added annotation ' + added if added else ''
-                changed = ', '.join(k for k in diff.get('changed', {}))
-                changed = 'changed annotation ' + changed if changed else ''
-                deleted = ', '.join(k for k in diff.get('deleted', {}))
-                deleted = 'deleted annotation ' + deleted if deleted else ''
-                changes = ', '.join(i for i in (added, changed, deleted) if i)
-                if changes:
-                    if self.summary:
-                        self.summary += ' and '
-                    self.summary += "{} {}".format(self.config.owner, changes)
+                self.update_summary(old_annotations, self.config.annotations, 'annotation')
 
             if not self.summary:
                 if self.version == 1:
@@ -500,3 +436,28 @@ class Release(UuidAuditedModel):
                     raise AlreadyExists("{} changed nothing - release stopped".format(self.owner))
 
         super(Release, self).save(*args, **kwargs)
+
+    def update_summary(self, old, new, base_text, default=None):
+        diff = dict_diff(new, old)
+        changes = parse_diff(base_text, diff, default)
+        if changes:
+            if self.summary:
+                self.summary += ' and '
+            self.summary += '{} {}'.format(self.config.owner, changes)
+
+
+def parse_diff(base_text, diff, default=None):
+    "Parses the diff and returns a string with the changes summary"
+    changesArray = []
+
+    def sanitize_entry(entry):
+        if entry == '' and default:
+            return default
+        else:
+            return entry
+    for action in ['added', 'changed', 'deleted']:
+        summary = ', '.join(sanitize_entry(difference) for difference in diff.get(action, {}))
+        header = '{} {} '.format(action, base_text)
+        summary = header + summary if summary else ''
+        changesArray.append(summary)
+    return ', '.join(change for change in changesArray if change)

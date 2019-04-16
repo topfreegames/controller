@@ -187,8 +187,8 @@ class ConfigTest(DeisTransactionTestCase):
         response = self.client.post(url, body)
         self.assertEqual(response.status_code, 201, response.data)
         for key in response.data:
-            self.assertIn(key, ['uuid', 'owner', 'created', 'updated', 'app', 'values', 'memory',
-                                'cpu', 'tags', 'registry', 'healthcheck'])
+            self.assertIn(key, ['annotations', 'uuid', 'owner', 'created', 'updated', 'app',
+                                'values', 'memory', 'cpu', 'tags', 'registry', 'healthcheck'])
         expected = {
             'owner': self.user.username,
             'app': app_id,

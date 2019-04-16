@@ -475,6 +475,23 @@ class Release(UuidAuditedModel):
                         self.summary += ' and '
                     self.summary += "{} {}".format(self.config.owner, changes)
 
+                # if the annotations changed, log the diff
+                changes = []
+                old_annotations = old_config.annotations if old_config else {}
+                diff = dict_diff(self.config.annotations, old_annotations)
+                # try to be as succinct as possible
+                added = ', '.join(k for k in diff.get('added', {}))
+                added = 'added annotation ' + added if added else ''
+                changed = ', '.join(k for k in diff.get('changed', {}))
+                changed = 'changed annotation ' + changed if changed else ''
+                deleted = ', '.join(k for k in diff.get('deleted', {}))
+                deleted = 'deleted annotation ' + deleted if deleted else ''
+                changes = ', '.join(i for i in (added, changed, deleted) if i)
+                if changes:
+                    if self.summary:
+                        self.summary += ' and '
+                    self.summary += "{} {}".format(self.config.owner, changes)
+
             if not self.summary:
                 if self.version == 1:
                     self.summary = "{} created the initial release".format(self.owner)

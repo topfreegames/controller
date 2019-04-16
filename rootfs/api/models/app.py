@@ -25,7 +25,7 @@ from api.models.domain import Domain
 from api.models.release import Release
 from api.models.tls import TLS
 from api.models.appsettings import AppSettings
-from api.utils import generate_app_name, async_run
+from api.utils import generate_app_name, async_run, dict_merge
 from scheduler import KubeHTTPException, KubeException
 
 logger = logging.getLogger(__name__)
@@ -1120,6 +1120,7 @@ class App(UuidAuditedModel):
                 err = '(annotations.json error): {}'.format(annotations)
                 self.log(err, logging.ERROR)
                 annotations = {}
+        annotations = dict_merge(annotations, config.annotations, True)
 
         # only web / cmd are routable
         # http://docs.deis.io/en/latest/using_deis/process-types/#web-vs-cmd-process-types

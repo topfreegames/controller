@@ -114,7 +114,7 @@ def fingerprint(key):
     return ':'.join(a + b for a, b in zip(fp_plain[::2], fp_plain[1::2]))
 
 
-def dict_merge(origin, merge):
+def dict_merge(origin, merge, none_should_delete=False):
     """
     Recursively merges dict's. not just simple a["key"] = b["key"], if
     both a and b have a key who's value is a dict then dict_merge is called
@@ -127,7 +127,7 @@ def dict_merge(origin, merge):
     result = deepcopy(origin)
     for key, value in merge.items():
         if key in result and isinstance(result[key], dict):
-            result[key] = dict_merge(result[key], value)
+            result[key] = dict_merge(result[key], value, none_should_delete)
         else:
             if isinstance(value, list):
                 if key not in result:
@@ -141,7 +141,10 @@ def dict_merge(origin, merge):
 
                         result[key].append(item)
             else:
-                result[key] = deepcopy(value)
+                if value is None and none_should_delete:
+                    del result[key]
+                else:
+                    result[key] = deepcopy(value)
     return result
 
 

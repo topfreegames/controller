@@ -449,6 +449,7 @@ class Release(UuidAuditedModel):
 def parse_diff(base_text, diff, default=None):
     "Parses the diff and returns a string with the changes summary"
     changesArray = []
+    base_text = '{} '.format(base_text) if base_text else ''
 
     def sanitize_entry(entry):
         if entry == '' and default:
@@ -457,7 +458,8 @@ def parse_diff(base_text, diff, default=None):
             return entry
     for action in ['added', 'changed', 'deleted']:
         summary = ', '.join(sanitize_entry(difference) for difference in diff.get(action, {}))
-        header = '{} {} '.format(action, base_text)
+        header = '{} {}'.format(action, base_text)
         summary = header + summary if summary else ''
         changesArray.append(summary)
-    return ', '.join(change for change in changesArray if change)
+    ret = ', '.join(change for change in changesArray if change)
+    return ret

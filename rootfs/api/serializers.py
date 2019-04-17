@@ -218,6 +218,7 @@ class ConfigSerializer(serializers.ModelSerializer):
     """Serialize a :class:`~api.models.Config` model."""
 
     app = serializers.SlugRelatedField(slug_field='id', queryset=models.App.objects.all())
+    annotations = JSONFieldSerializer(convert_to_str=False, required=False, binary=True)
     owner = serializers.ReadOnlyField(source='owner.username')
     values = JSONFieldSerializer(required=False, binary=True)
     memory = JSONFieldSerializer(required=False, binary=True)

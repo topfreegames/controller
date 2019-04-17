@@ -3,6 +3,7 @@ from django.db import models
 from jsonfield import JSONField
 import json
 
+from api.utils import dict_merge
 from api.models.release import Release
 from api.models import UuidAuditedModel
 from api.exceptions import DeisException, UnprocessableEntity
@@ -16,6 +17,7 @@ class Config(UuidAuditedModel):
 
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT)
     app = models.ForeignKey('App', on_delete=models.CASCADE)
+    annotations = JSONField(default={}, blank=True)
     values = JSONField(default={}, blank=True)
     memory = JSONField(default={}, blank=True)
     cpu = JSONField(default={}, blank=True)
@@ -151,6 +153,13 @@ class Config(UuidAuditedModel):
                         data[key][probeType] = probe
         setattr(self, 'healthcheck', data)
 
+    def set_annotations(self, previous_config):
+        data = getattr(previous_config, 'annotations', {}).copy()
+        new_data = getattr(self, 'annotations', {}).copy()
+
+        merged = dict_merge(data, new_data, True)
+        setattr(self, 'annotations', merged)
+
     def save(self, **kwargs):
         """merge the old config with the new"""
         try:
@@ -162,7 +171,7 @@ class Config(UuidAuditedModel):
                 # usually means a totally new app
                 previous_config = self.app.config_set.latest()
 
-            for attr in ['cpu', 'memory', 'tags', 'registry', 'values']:
+            for attr in ['annotations', 'cpu', 'memory', 'tags', 'registry', 'values']:
                 data = getattr(previous_config, attr, {}).copy()
                 new_data = getattr(self, attr, {}).copy()
 
@@ -181,6 +190,7 @@ class Config(UuidAuditedModel):
             self._migrate_legacy_healthcheck()
             self.set_registry()
             self.set_tags(previous_config)
+            self.set_annotations(previous_config)
         except Config.DoesNotExist:
             self.set_tags({'tags': {}})
 

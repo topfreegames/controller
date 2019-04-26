@@ -23,6 +23,7 @@ class Config(UuidAuditedModel):
     cpu = JSONField(default={}, blank=True)
     tags = JSONField(default={}, blank=True)
     registry = JSONField(default={}, blank=True)
+    tolerations = JSONField(default={}, blank=True)
     healthcheck = JSONField(default={}, blank=True)
 
     class Meta:
@@ -160,6 +161,13 @@ class Config(UuidAuditedModel):
         merged = dict_merge(data, new_data, True)
         setattr(self, 'annotations', merged)
 
+    def set_tolerations(self, previous_config):
+        data = getattr(previous_config, 'tolerations', {}).copy()
+        new_data = getattr(self, 'tolerations', {}).copy()
+
+        merged = dict_merge(data, new_data, True)
+        setattr(self, 'tolerations', merged)
+
     def save(self, **kwargs):
         """merge the old config with the new"""
         try:
@@ -171,7 +179,7 @@ class Config(UuidAuditedModel):
                 # usually means a totally new app
                 previous_config = self.app.config_set.latest()
 
-            for attr in ['annotations', 'cpu', 'memory', 'tags', 'registry', 'values']:
+            for attr in ['annotations', 'cpu', 'memory', 'tags', 'tolerations', 'registry', 'values']:
                 data = getattr(previous_config, attr, {}).copy()
                 new_data = getattr(self, attr, {}).copy()
 
@@ -191,6 +199,7 @@ class Config(UuidAuditedModel):
             self.set_registry()
             self.set_tags(previous_config)
             self.set_annotations(previous_config)
+            self.set_tolerations(previous_config)
         except Config.DoesNotExist:
             self.set_tags({'tags': {}})
 

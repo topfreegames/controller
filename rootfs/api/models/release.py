@@ -428,6 +428,10 @@ class Release(UuidAuditedModel):
                 old_annotations = old_config.annotations if old_config else {}
                 self.update_summary(old_annotations, self.config.annotations, 'annotation')
 
+                # if the tolerations changed, log the diff
+                old_tolerations = old_config.tolerations if old_config else {}
+                self.update_summary(old_tolerations, self.config.tolerations, 'toleration')
+
             if not self.summary:
                 if self.version == 1:
                     self.summary = "{} created the initial release".format(self.owner)

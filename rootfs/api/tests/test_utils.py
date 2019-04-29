@@ -86,6 +86,25 @@ class TestUtils(unittest.TestCase):
                              'names': ['bob', 'kyle', 'kenny', 'jimbo'],
                              'last_names': ['kenny', 'cartman', 'stan']})
 
+    def test_dict_merge_with_delete(self):
+        a = {'key': 'value_to_keep', 'another': 'value_to_delete'}
+        b = {'another': None}
+
+        c = utils.dict_merge(a, b, True)
+        self.assertEqual(c, {'key': 'value_to_keep'})
+
+        a = {'key': 'value_to_keep', 'another': {'with_dict': 'also_delete'}}
+        b = {'another': None}
+
+        c = utils.dict_merge(a, b, True)
+        self.assertEqual(c, {'key': 'value_to_keep'})
+
+        a = {'key': 'value_to_keep', 'another': ['with_list', 'aswell']}
+        b = {'another': None}
+
+        c = utils.dict_merge(a, b, True)
+        self.assertEqual(c, {'key': 'value_to_keep'})
+
     def test_dict_merge_bad_merge(self):
         """Returns b because it isn't a dict"""
         a = {'key': 'value'}

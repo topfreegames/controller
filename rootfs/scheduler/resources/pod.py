@@ -773,6 +773,7 @@ class Pod(Resource):
 
         return timeout
 
+
 def get_tolerations_from_config(tolerations):
     remmaped_tolerations = []
     for _, named_tolerations in tolerations.items():

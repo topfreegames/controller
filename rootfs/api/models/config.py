@@ -179,7 +179,8 @@ class Config(UuidAuditedModel):
                 # usually means a totally new app
                 previous_config = self.app.config_set.latest()
 
-            for attr in ['annotations', 'cpu', 'memory', 'tags', 'tolerations', 'registry', 'values']:
+            for attr in ['annotations', 'cpu', 'memory', 'tags',
+                         'tolerations', 'registry', 'values']:
                 data = getattr(previous_config, attr, {}).copy()
                 new_data = getattr(self, attr, {}).copy()
 

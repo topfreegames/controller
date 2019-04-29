@@ -129,7 +129,7 @@ def dict_merge(origin, merge, none_should_delete=False):
         if key in result and isinstance(result[key], dict) and isinstance(value, dict):
             result[key] = dict_merge(result[key], value, none_should_delete)
         else:
-            if isinstance(value, list) and isinstance(result[key]):
+            if isinstance(value, list):
                 if key not in result:
                     result[key] = value
                 else:

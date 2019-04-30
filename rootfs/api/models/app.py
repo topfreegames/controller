@@ -1103,13 +1103,23 @@ class App(UuidAuditedModel):
         image_pull_secret_name = self.image_pull_secret(self.id, config.registry, release.image)
 
         tolerations = config.values.get('KUBERNETES_PODS_TOLERATIONS', settings.KUBERNETES_PODS_TOLERATIONS)  # noqa
+        loaded_config = {}
         if tolerations:
             try:
-                tolerations = json.loads(tolerations)
+                loaded_config = json.loads(tolerations)
             except json.decoder.JSONDecodeError:
                 err = '(tolerations.json error): {}'.format(tolerations)
                 self.log(err, logging.ERROR)
-                tolerations = {}
+        tolerations = {}
+        for app_type, tols in loaded_config.items():
+            tolerations[app_type] = {}
+            for toleration in tols:
+                while True:
+                    name = generate_app_name()
+                    if name not in tolerations:
+                        break
+                tolerations[app_type][name] = toleration
+        tolerations = dict_merge(tolerations, config.tolerations, True)
 
         # set pod annotations
         annotations = config.values.get('KUBERNETES_PODS_ANNOTATIONS', settings.KUBERNETES_PODS_ANNOTATIONS) # noqa

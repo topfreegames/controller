@@ -182,7 +182,7 @@ class Pod(Resource):
         # tolerations
         tolerations = self._get_json_from_app('tolerations', **kwargs)
         if tolerations:
-            spec['tolerations'] = tolerations
+            spec['tolerations'] = get_tolerations_from_config(tolerations)
 
         return manifest
 
@@ -772,3 +772,10 @@ class Pod(Resource):
             timeout += delay
 
         return timeout
+
+
+def get_tolerations_from_config(tolerations):
+    remmaped_tolerations = []
+    for _, named_tolerations in tolerations.items():
+        remmaped_tolerations.append(named_tolerations)
+    return remmaped_tolerations

@@ -15,7 +15,9 @@ toleration = {
     'effect': 'NoSchedule'
 }
 tolerations = {
-    'web': [toleration]
+    'web': {
+        'test-toleration': toleration,
+    },
 }
 
 annotations = {
